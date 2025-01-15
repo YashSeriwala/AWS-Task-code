@@ -1,0 +1,31 @@
+import boto3
+
+
+def lambda_handler(event, context):
+    # S3 client initialization
+    s3_client = boto3.client('s3')
+   
+    # Bucket name
+    bucket_name = "first-buckett1"
+   
+    # File details (coming from the event)
+    file_name = "test.txt"  # Replace with your desired file name
+    file_content = "This is test file content."  # Replace with your desired content
+
+
+    try:
+        # Uploading the file to S3
+        s3_client.put_object(
+            Bucket=bucket_name,
+            Key=file_name,
+            Body=file_content
+        )
+        return {
+            "statusCode": 200,
+            "body": f"File {file_name} uploaded successfully to {bucket_name}!"
+        }
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "body": f"Error: {str(e)}"
+        }
