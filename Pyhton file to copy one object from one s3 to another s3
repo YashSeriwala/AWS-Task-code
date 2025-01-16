@@ -1,0 +1,26 @@
+import boto3
+from botocore.exceptions import ClientError
+
+def lambda_handler(event, context):
+    s3 = boto3.client('s3')  # Initialize the S3 client
+    source_bucket = 'first-buckett1'
+    source_key = 'test.txt'
+    destination_bucket = 'my-buckett10'
+    destination_key = 'static/test.txt'
+
+    try:
+        # Define the copy source
+        copy_source = {'Bucket': source_bucket, 'Key': source_key}
+        
+        # Copy the object
+        s3.copy_object(
+            CopySource=copy_source,
+            Bucket=destination_bucket,
+            Key=destination_key
+        )
+        print("Object copied successfully!")
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'NoSuchKey':
+            print("Error: The specified key does not exist.")
+        else:
+            print(f"Unexpected error: {e}")
