@@ -1,0 +1,51 @@
+import boto3
+import gzip
+import shutil
+import os
+
+s3 = boto3.client('s3')
+
+def lambda_handler(event, context):
+    # Extract information from the S3 event
+    bucket_name = event['Records'][0]['s3']['bucket']['name']
+    file_name = event['Records'][0]['s3']['object']['key']
+
+    # Skip files that are already compressed
+    if file_name.endswith('.gz'):
+        return {
+            'statusCode': 200,
+            'body': f'File {file_name} is already compressed. Skipping processing.'
+        }
+
+    compressed_file_name = file_name + '.gz'
+
+    # Define file paths
+    download_path = '/tmp/' + file_name
+    upload_path = '/tmp/' + compressed_file_name
+
+    try:
+        # Download the file from S3
+        s3.download_file(bucket_name, file_name, download_path)
+
+        # Compress the file using gzip
+        with open(download_path, 'rb') as f_in:
+            with gzip.open(upload_path, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+
+        # Upload the compressed file back to S3
+        s3.upload_file(upload_path, bucket_name, compressed_file_name)
+
+        # Clean up temporary files
+        os.remove(download_path)
+        os.remove(upload_path)
+
+        return {
+            'statusCode': 200,
+            'body': f'File {file_name} compressed and uploaded as {compressed_file_name}'
+        }
+
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'body': f'Error processing file {file_name}: {str(e)}'
+        }
